@@ -163,3 +163,5 @@ cython_debug/
 *.zip# pixi environments
 .pixi/*
 !.pixi/config.toml
+
+data/*
