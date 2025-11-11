@@ -14,8 +14,7 @@ dependencies = [
     "regex>=2024.11.6", # more powerful regex than the builtin `re` module
     "submitit>=1.5.2", # job submission for SLURM
     "tiktoken>=0.9.0",
-    "torch~=2.6.0; sys_platform != 'darwin' or platform_machine != 'x86_64'",
-    "torch~=2.2.2; sys_platform == 'darwin' and platform_machine == 'x86_64'", # Intel Macs
+    "torch~=2.6.0",
     "tqdm>=4.67.1",
     "wandb>=0.19.7",
     "ty>=0.0.1a16",
@@ -50,3 +49,15 @@ extend-select = ["UP"]
 ignore = [
     "F722"
 ]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tool.pixi.pypi-dependencies]
+cs336_basics = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+python = "==3.12"
