@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from typing import Self
 
 import regex as re
+from idna import encode
 
 
 class Tokenizer:
@@ -15,7 +16,7 @@ class Tokenizer:
         self.vocab = vocab
         self.merges = merges
         if special_tokens is None:
-            special_tokens = []
+            self.special_tokens = []
         else:
             self.special_tokens = special_tokens
             N = len(self.vocab)
@@ -61,12 +62,19 @@ class Tokenizer:
         re_pattern = re.compile(r"'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+")
         token_seq = []
 
-        for part in re.split(f"({'|'.join(map(re.escape, self.special_tokens))})", text):
+        if self.special_tokens:
+            parts = re.split(f"({'|'.join(map(re.escape, self.special_tokens))})", text)
+        else:
+            parts = [text]
+
+        for part in parts:
             if part in self.special_tokens:
                 token_seq.append(part.encode("utf-8"))
             else:
                 for token in re_pattern.findall(part):
-                    token_seq.extend(token.encode("utf-8"))
+                    # token_seq.append(token.encode("utf-8"))
+                    encoded_token = token.encode("utf-8")
+                    token_seq.extend([bytes([b]) for b in encoded_token])
 
         for pair in self.merges:
             token_seq = self._merge_pair(pair, token_seq)
