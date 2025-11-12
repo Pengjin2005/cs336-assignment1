@@ -4,8 +4,8 @@ from bpe import train_bpe
 
 if __name__ == "__main__":
     vocab, merges = train_bpe(
-        input_path="data\owt_train.txt",
-        vocab_size=500,
+        input_path="dat/owt_train.txt",
+        vocab_size=32000,
         special_tokens=[""],
     )
 

@@ -4,12 +4,13 @@ from bpe import train_bpe
 
 if __name__ == "__main__":
     vocab, merges = train_bpe(
-        input_path="data/data\TinyStoriesV2-GPT4-train.txt",
-        vocab_size=500,
+        input_path="data/TinyStoriesV2-GPT4-train.txt",
+        vocab_size=10000,
         special_tokens=["<|endoftext|>"],
     )
 
     # Save the vocab and merges to files
+    print("Saving BPE vocab and merges...")
     json.dump(
         {vocab_item.decode("utf-8"): index for vocab_item, index in vocab.items()},
         open("tinystories_bpe_vocab.json", "w", encoding="utf-8"),

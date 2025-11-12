@@ -8,6 +8,7 @@ from collections import defaultdict
 from typing import BinaryIO
 
 import regex as re
+from tqdm import tqdm
 
 re_pattern = re.compile(r"'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+")
 
@@ -178,6 +179,7 @@ def train_bpe(
     A Byte-Pair Encoding Tokenizer training function.
     """
     # Vocab Initialization
+    print("Initializing vocabulary...")
     vocab = {i: bytes([i]) for i in range(256)}  # Adding byte values
     merges = []
     next_idx = 256
@@ -187,9 +189,9 @@ def train_bpe(
         vocab[next_idx] = token.encode("utf-8")  # Adding special tokens
         special_tokens_bytes.append(token.encode("utf-8"))
         next_idx += 1
-
+    print(f"Added {len(special_tokens)} special tokens.")
     # Pre-tokenization with Parallel Processing
-
+    print("Loading and pre-tokenizing data in parallel...")
     with open(input_path, "rb") as f:
         boundaries = find_chunk_boundaries(f, os.cpu_count(), b"<|endoftext|>")
 
@@ -203,17 +205,11 @@ def train_bpe(
         for token, freq in _token_freq.items():
             token_freq[token] += freq
 
-    # token_freq = defaultdict(int)
-    # for part in re.split(f"({'|'.join(map(re.escape, special_tokens))})", data):
-    #     if part in special_tokens:
-    #         # token_freq[part.encode("utf-8")] += 1
-    #         continue
-    #     else:
-    #         for token in re_pattern.findall(part):
-    #             token_freq[token.encode("utf-8")] += 1
+    print(f"Pre-tokenization complete. {len(token_freq)} unique tokens found.")
 
     # Byte Pair Merging
-    # split = {word: [bytes([b]) for b in word] for word in token_freq.keys()}
+    print("Starting BPE merging...")
+
     split = {}
     for word in token_freq.keys():
         if word not in special_tokens_bytes:
@@ -224,7 +220,8 @@ def train_bpe(
     pair_freq = count_pairs(split, token_freq)
 
     # split = {token: bytes([token.encode("utf-8")]) for token in token_freq.keys()}
-    while len(vocab) < vocab_size:
+    for _ in tqdm(range(vocab_size - len(vocab)), desc="Merging pairs"):
+        # while len(vocab) < vocab_size:
         if not pair_freq:
             break
         best_pair = max(pair_freq.items(), key=lambda pair: (pair[1], pair[0]))[0]
@@ -237,5 +234,6 @@ def train_bpe(
         if new_token not in vocab.values():
             vocab[next_idx] = new_token
             next_idx += 1
+    print("BPE merging complete.")
 
     return vocab, merges
