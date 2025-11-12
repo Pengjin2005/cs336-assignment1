@@ -14,12 +14,15 @@ class Tokenizer:
         """
         self.vocab = vocab
         self.merges = merges
-        self.special_tokens = special_tokens
-        N = len(self.vocab)
-        for token in special_tokens:
-            if token.encode("utf-8") not in self.vocab.values():
-                self.vocab[N] = token.encode("utf-8")
-                N += 1
+        if special_tokens is None:
+            special_tokens = []
+        else:
+            self.special_tokens = special_tokens
+            N = len(self.vocab)
+            for token in special_tokens:
+                if token.encode("utf-8") not in self.vocab.values():
+                    self.vocab[N] = token.encode("utf-8")
+                    N += 1
         self.dictionary = {v: k for k, v in self.vocab.items()}
 
     @classmethod
