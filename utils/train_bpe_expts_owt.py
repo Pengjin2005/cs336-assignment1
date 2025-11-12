@@ -1,6 +1,6 @@
 import json
 
-from bpe import train_bpe
+from cs336_basics.bpe import train_bpe
 
 if __name__ == "__main__":
     vocab, merges = train_bpe(
@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # Save the vocab and merges to files
     json.dump(
-        {vocab_item.decode("utf-8"): index for vocab_item, index in vocab.items()},
+        {index: vocab_item.decode("utf-8") for index, vocab_item in vocab.items()},
         open("owt_bpe_vocab.json", "w", encoding="utf-8"),
         ensure_ascii=False,
         indent=4,
