@@ -93,6 +93,66 @@ def count_pairs(split: dict[bytes, list[bytes]], token_freq: dict[bytes, int]) -
     return pair_freq
 
 
+def merge_pair_optimized(
+    split: dict[bytes, list[bytes]],
+    pair: tuple[bytes, bytes],
+    token_freq: dict[bytes, int],
+    pair_freq: dict[tuple[bytes, bytes], int],
+) -> tuple[dict[bytes, list[bytes]], dict[tuple[bytes, bytes], int]]:
+    """
+    Merge a pair and incrementally update pair frequencies.
+    Returns the new split and updated pair_freq.
+    Only updates frequencies for words that contain the merged pair.
+    """
+    new_split = split.copy()
+
+    for word, byte_seq in split.items():
+        # Quick check if this word contains the pair to merge
+        has_pair = False
+        i = 0
+        while i < len(byte_seq) - 1:
+            if byte_seq[i] == pair[0] and byte_seq[i + 1] == pair[1]:
+                has_pair = True
+                break
+            i += 1
+
+        if not has_pair:
+            continue
+
+        freq = token_freq[word]
+
+        # Remove old pair counts for this word
+        i = 0
+        while i < len(byte_seq) - 1:
+            old_pair = (byte_seq[i], byte_seq[i + 1])
+            pair_freq[old_pair] -= freq
+            if pair_freq[old_pair] <= 0:
+                del pair_freq[old_pair]
+            i += 1
+
+        # Merge the pair in this word
+        n_split = []
+        i = 0
+        while i < len(byte_seq):
+            if i < len(byte_seq) - 1 and byte_seq[i] == pair[0] and byte_seq[i + 1] == pair[1]:
+                n_split.append(pair[0] + pair[1])
+                i += 2
+            else:
+                n_split.append(byte_seq[i])
+                i += 1
+
+        new_split[word] = n_split
+
+        # Add new pair counts for this word
+        i = 0
+        while i < len(n_split) - 1:
+            new_pair = (n_split[i], n_split[i + 1])
+            pair_freq[new_pair] = pair_freq.get(new_pair, 0) + freq
+            i += 1
+
+    return new_split, pair_freq
+
+
 def merge_pair(split: dict[bytes, list[bytes]], pair: tuple[bytes, bytes]) -> dict[bytes, list[bytes]]:
     new_split = {}
     for word in split.keys():
@@ -159,14 +219,19 @@ def train_bpe(
         if word not in special_tokens_bytes:
             byte_seq = [bytes([b]) for b in word]
             split[word] = byte_seq
+
+    # Initial pair frequency count
+    pair_freq = count_pairs(split, token_freq)
+
     # split = {token: bytes([token.encode("utf-8")]) for token in token_freq.keys()}
     while len(vocab) < vocab_size:
-        pair_freq = count_pairs(split, token_freq)
         if not pair_freq:
             break
         best_pair = max(pair_freq.items(), key=lambda pair: (pair[1], pair[0]))[0]
         merges.append(best_pair)
-        split = merge_pair(split, best_pair)
+
+        # Use optimized merge with incremental updates
+        split, pair_freq = merge_pair_optimized(split, best_pair, token_freq, pair_freq)
 
         new_token = best_pair[0] + best_pair[1]
         if new_token not in vocab.values():
