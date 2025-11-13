@@ -67,8 +67,7 @@ class Tokenizer:
                 token_seq.append(self.dictionary[encoded_token])
             else:
                 for token in re_pattern.findall(part):
-                    # token_seq.append(token.encode("utf-8"))
-                    encoded_token = [bytes([b]) for b in encoded_token]
+                    encoded_token = [bytes([b]) for b in token.encode("utf-8")]
                     for pair in self.merges:
                         encoded_token = self._merge_pair(pair, encoded_token)
                     token_seq.extend(encoded_token)
