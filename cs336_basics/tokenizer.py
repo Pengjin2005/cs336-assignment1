@@ -48,12 +48,6 @@ class Tokenizer:
                 i += 1
         return new_seq
 
-    def _tokenize(self, text: list[bytes]) -> list[bytes]:
-        tokens = []
-        for byte in text:
-            tokens.append(self.dictionary[byte])
-        return tokens
-
     def encode(self, text: str) -> list[int]:
         """
         Encode a given text into a list of token IDs.
@@ -68,16 +62,18 @@ class Tokenizer:
 
         for part in parts:
             if part in self.special_tokens:
-                token_seq.append(part.encode("utf-8"))
+                # token_seq.append(part.encode("utf-8"))
+                encoded_token = part.encode("utf-8")
+                token_seq.append(self.dictionary[encoded_token])
             else:
                 for token in re_pattern.findall(part):
                     # token_seq.append(token.encode("utf-8"))
-                    encoded_token = token.encode("utf-8")
-                    token_seq.extend([bytes([b]) for b in encoded_token])
+                    encoded_token = [bytes([b]) for b in encoded_token]
+                    for pair in self.merges:
+                        encoded_token = self._merge_pair(pair, encoded_token)
+                    token_seq.extend(encoded_token)
 
-        for pair in self.merges:
-            token_seq = self._merge_pair(pair, token_seq)
-        return self._tokenize(token_seq)
+        return token_seq
 
     def encode_iterable(self, iterable: Iterable[str]) -> Iterable[int]:
         """
