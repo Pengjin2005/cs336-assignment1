@@ -70,6 +70,7 @@ class Tokenizer:
                     encoded_token = [bytes([b]) for b in token.encode("utf-8")]
                     for pair in self.merges:
                         encoded_token = self._merge_pair(pair, encoded_token)
+                    encoded_token = [self.dictionary[b] for b in encoded_token]
                     token_seq.extend(encoded_token)
 
         return token_seq
