@@ -3,7 +3,6 @@ from collections.abc import Iterable
 from typing import Self
 
 import regex as re
-from idna import encode
 
 
 class Tokenizer:
@@ -18,7 +17,7 @@ class Tokenizer:
         if special_tokens is None:
             self.special_tokens = []
         else:
-            self.special_tokens = special_tokens
+            self.special_tokens = sorted(special_tokens, key=len, reverse=True)
             N = len(self.vocab)
             for token in special_tokens:
                 if token.encode("utf-8") not in self.vocab.values():
