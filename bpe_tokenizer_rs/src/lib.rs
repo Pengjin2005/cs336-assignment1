@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
 
 use lazy_static::lazy_static;
 use pyo3::exceptions::{PyFileNotFoundError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::PyType;
 use regex::Regex;
 
 // 编译核心的 GPT-2 BPE 正则表达式
@@ -129,7 +128,7 @@ impl PyTokenizer {
     #[classmethod]
     #[pyo3(signature = (vocab_path, merges_path, special_tokens = None))]
     fn from_files(
-        _cls: &PyType,
+        _cls: &Bound<'_, PyType>,
         vocab_path: String,
         merges_path: String,
         special_tokens: Option<Vec<String>>,
@@ -238,13 +237,14 @@ impl PyTokenizer {
     /// (Python: encode_iterable)
     /// 将一个字符串迭代器编码为一个扁平的 ID 列表。
     /// 注意：Python 版本返回一个生成器。
-    /// 这个版本为了简单起见，接收一个迭代器并返回一个扁平的 Vec<usize>。
-    fn encode_iterable(&self, py: Python, iterable: &PyAny) -> PyResult<Vec<usize>> {
+    /// 这个版本为了简单起见,接收一个迭代器并返回一个扁平的 Vec<usize>。
+    fn encode_iterable(&self, iterable: Bound<'_, PyAny>) -> PyResult<Vec<usize>> {
         let mut flat_ids: Vec<usize> = Vec::new();
 
         for item in iterable.iter()? {
-            let text = item?.extract::<&str>()?;
-            let ids = self.encode(text)?; // 调用我们自己的 encode 方法
+            let item = item?;
+            let text = item.extract::<String>()?;
+            let ids = self.encode(&text)?; // 调用我们自己的 encode 方法
             flat_ids.extend(ids);
         }
 
@@ -270,7 +270,7 @@ impl PyTokenizer {
 
 /// Python 模块定义
 #[pymodule]
-fn bpe_tokenizer_rs(_py: Python, m: &PyModule) -> PyResult<()> {
+fn bpe_tokenizer_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyTokenizer>()?;
     Ok(())
 }

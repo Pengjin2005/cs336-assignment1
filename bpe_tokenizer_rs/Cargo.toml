@@ -9,7 +9,7 @@ crate-type = ["cdylib"]  # 声明这是一个 C 动态库 (用于 Python)
 
 [dependencies]
 # PyO3 核心依赖
-pyo3 = { version = "0.21.0", features = ["extension-module"] }
+pyo3 = { version = "0.22", features = ["extension-module"] }
 
 # serde 用于解析 JSON
 serde = { version = "1.0", features = ["derive"] }
