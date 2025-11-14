@@ -9,7 +9,16 @@ import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
-from cs336_basics.model_components import Embedding, Linear
+from cs336_basics.model_components import (
+    Embedding,
+    Linear,
+    MultiHeadSelfAttention,
+    RMSNorm,
+    RotaryPositionalEmbedding,
+    ScaledDotProductAttention,
+    Softmax,
+    SwiGLU,
+)
 from cs336_basics.tokenizer import Tokenizer
 
 
@@ -88,7 +97,12 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+    # raise NotImplementedError
+    layer = SwiGLU(d_model)
+    layer.w1.data = w1_weight
+    layer.w2.data = w2_weight
+    layer.w3.data = w3_weight
+    return layer.forward(in_features)
 
 
 def run_scaled_dot_product_attention(
@@ -109,7 +123,8 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    return ScaledDotProductAttention(Q, K, V, mask)
 
 
 def run_multihead_self_attention(
@@ -143,7 +158,10 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    layer = MultiHeadSelfAttention(d_model, num_heads, rope=False)
+    layer.set_parameters(q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight)
+    return layer.forward(in_features)
 
 
 def run_multihead_self_attention_with_rope(
@@ -183,7 +201,10 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    layer = MultiHeadSelfAttention(d_model, num_heads, rope=True)
+    layer.set_parameters(q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight)
+    return layer.forward(in_features)
 
 
 def run_rope(
@@ -205,7 +226,11 @@ def run_rope(
     Returns:
         Float[Tensor, " ... sequence_length d_k"]: Tensor with RoPEd input.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    layer = RotaryPositionalEmbedding(
+        theta, d_k, max_seq_len, device=in_query_or_key.device, dtype=in_query_or_key.dtype
+    )
+    return layer.forward(in_query_or_key, token_positions)
 
 
 def run_transformer_block(
@@ -383,7 +408,9 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    raise NotImplementedError
+    layer = RMSNorm(d_model, eps)
+    layer.scale.data = weights
+    return layer.forward(in_features)
 
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
@@ -436,7 +463,8 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
         Float[Tensor, "..."]: Tensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    return Softmax(in_features, dim)
 
 
 def run_cross_entropy(
