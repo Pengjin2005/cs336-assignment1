@@ -166,4 +166,8 @@ cython_debug/
 data/
 
 _snapshots/
-fixtures/
+fixtures/# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+data/*
