@@ -171,3 +171,4 @@ fixtures/# pixi environments
 !.pixi/config.toml
 
 data/*
+uv.lock

@@ -10,14 +10,16 @@ from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
 from cs336_basics.model_components import (
+    SDPA,
     Embedding,
     Linear,
     MultiHeadSelfAttention,
     RMSNorm,
     RotaryPositionalEmbedding,
-    ScaledDotProductAttention,
     Softmax,
     SwiGLU,
+    TransformerBlock,
+    TransformerLM,
 )
 from cs336_basics.tokenizer import Tokenizer
 
@@ -98,7 +100,7 @@ def run_swiglu(
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
     # raise NotImplementedError
-    layer = SwiGLU(d_model)
+    layer = SwiGLU(d_model, d_ff=d_ff)
     layer.w1.data = w1_weight
     layer.w2.data = w2_weight
     layer.w3.data = w3_weight
@@ -124,7 +126,7 @@ def run_scaled_dot_product_attention(
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
     # raise NotImplementedError
-    return ScaledDotProductAttention(Q, K, V, mask)
+    return SDPA(Q, K, V, mask)
 
 
 def run_multihead_self_attention(
@@ -202,7 +204,14 @@ def run_multihead_self_attention_with_rope(
         implementation with the given QKV projection weights and input features.
     """
     # raise NotImplementedError
-    layer = MultiHeadSelfAttention(d_model, num_heads, rope=True)
+    layer = MultiHeadSelfAttention(
+        d_model,
+        num_heads,
+        rope=True,
+        max_seq_len=max_seq_len,
+        theta=theta,
+        token_positions=token_positions,
+    )
     layer.set_parameters(q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight)
     return layer.forward(in_features)
 
@@ -228,7 +237,11 @@ def run_rope(
     """
     # raise NotImplementedError
     layer = RotaryPositionalEmbedding(
-        theta, d_k, max_seq_len, device=in_query_or_key.device, dtype=in_query_or_key.dtype
+        theta,
+        d_k,
+        max_seq_len,
+        device=in_query_or_key.device,
+        dtype=in_query_or_key.dtype,
     )
     return layer.forward(in_query_or_key, token_positions)
 
@@ -303,7 +316,12 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    block = TransformerBlock(
+        d_model, num_heads, d_ff, rope=True, max_seq_len=max_seq_len, theta=theta
+    )
+    block.set_parameters(weights)
+    return block.forward(in_features)
 
 
 def run_transformer_lm(
@@ -385,7 +403,21 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    # print(weights.keys())
+
+    transformer_lm = TransformerLM(
+        vocab_size,
+        context_length,
+        d_model,
+        num_layers,
+        num_heads,
+        d_ff,
+        rope_theta,
+    )
+
+    transformer_lm.set_parameters(weights)
+    return transformer_lm.forward(in_indices)
 
 
 def run_rmsnorm(
@@ -485,7 +517,9 @@ def run_cross_entropy(
     raise NotImplementedError
 
 
-def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
+def run_gradient_clipping(
+    parameters: Iterable[torch.nn.Parameter], max_l2_norm: float
+) -> None:
     """Given a set of parameters, clip their combined gradients to have l2 norm at most max_l2_norm.
 
     Args:

@@ -7,7 +7,10 @@ import regex as re
 
 class Tokenizer:
     def __init__(
-        self, vocab: dict[int, bytes], merges: list[tuple[bytes, bytes]], special_tokens: list[str] | None = None
+        self,
+        vocab: dict[int, bytes],
+        merges: list[tuple[bytes, bytes]],
+        special_tokens: list[str] | None = None,
     ):
         """
         Construct a tokenizer from given vocabulary and merges.
@@ -26,14 +29,20 @@ class Tokenizer:
         self.dictionary = {v: k for k, v in self.vocab.items()}
 
     @classmethod
-    def from_files(cls, vocab_path: str, merges_path: str, special_tokens: list[str] | None = None) -> Self:
+    def from_files(
+        cls, vocab_path: str, merges_path: str, special_tokens: list[str] | None = None
+    ) -> Self:
         """
         Construct a tokenizer from vocabulary and merges files.
         """
         with open(vocab_path, encoding="utf-8") as f:
             vocab = json.load(f)
         with open(merges_path, encoding="utf-8") as f:
-            merges = [tuple(line.strip().encode("utf-8").split(b" ")) for line in f if line.strip()]
+            merges = [
+                tuple(line.strip().encode("utf-8").split(b" "))
+                for line in f
+                if line.strip()
+            ]
         return cls(vocab, merges, special_tokens)
 
     def _merge_pair(self, pair: tuple[bytes, bytes], seq: list[bytes]) -> list[bytes]:
@@ -52,7 +61,9 @@ class Tokenizer:
         """
         Encode a given text into a list of token IDs.
         """
-        re_pattern = re.compile(r"'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+")
+        re_pattern = re.compile(
+            r"'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"
+        )
         token_seq = []
 
         if self.special_tokens:
